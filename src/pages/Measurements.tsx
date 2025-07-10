@@ -298,7 +298,6 @@ const Measurements = () => {
                     <RadialBar 
                       dataKey="progress" 
                       cornerRadius={10} 
-                      fill={(entry) => entry.fill}
                     />
                     <Legend 
                       iconSize={12}

@@ -114,10 +114,10 @@ const Goals = () => {
     return Math.min((current / target) * 100, 100);
   };
 
-  const getDaysRemaining = (deadline) => {
+  const getDaysRemaining = (deadline: string) => {
     const today = new Date();
     const deadlineDate = new Date(deadline);
-    const diffTime = deadlineDate - today;
+    const diffTime = deadlineDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };

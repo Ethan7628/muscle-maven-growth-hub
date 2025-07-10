@@ -62,7 +62,7 @@ const Progress = () => {
     }
   };
 
-  const groupedPhotos = photos.reduce((acc, photo) => {
+  const groupedPhotos = photos.reduce((acc: Record<string, typeof photos>, photo) => {
     const date = photo.date;
     if (!acc[date]) acc[date] = [];
     acc[date].push(photo);
