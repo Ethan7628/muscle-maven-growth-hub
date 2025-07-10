@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Camera, Image, TrendingUp, Calendar, Maximize2 } from "lucide-react";
+import { CameraCapture } from "@/components/CameraCapture";
 import { toast } from "sonner";
 
 const Progress = () => {
@@ -39,18 +40,22 @@ const Progress = () => {
     }
   ]);
 
-  const handlePhotoUpload = (type: string) => {
-    // In a real app, this would handle file upload
+  const handlePhotoCapture = (photoBlob: Blob, photoType: string) => {
+    // Create object URL for the captured photo
+    const photoUrl = URL.createObjectURL(photoBlob);
+    
     const newPhoto = {
       id: Date.now(),
       date: new Date().toISOString().split('T')[0],
-      type,
-      url: "/placeholder.svg",
-      notes: `New ${type.toLowerCase()} progress photo`
+      type: photoType,
+      url: photoUrl,
+      notes: `New ${photoType.toLowerCase()} progress photo - ${new Date().toLocaleDateString()}`
     };
     
     setPhotos(prev => [newPhoto, ...prev]);
-    toast.success(`${type} progress photo uploaded! 📸`);
+    
+    // In a real app with Supabase, you would upload the blob to storage here
+    console.log("Photo blob ready for upload:", photoBlob);
   };
 
   const getTypeColor = (type: string) => {
@@ -81,30 +86,22 @@ const Progress = () => {
             Visual tracking of your muscle development journey
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button 
-            onClick={() => handlePhotoUpload("Front")} 
-            className="bg-primary hover:bg-primary/90 text-background"
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Front View
-          </Button>
-          <Button 
-            onClick={() => handlePhotoUpload("Side")} 
-            variant="outline" 
-            className="border-secondary text-secondary hover:bg-secondary/10"
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Side View
-          </Button>
-          <Button 
-            onClick={() => handlePhotoUpload("Back")} 
-            variant="outline" 
-            className="border-accent text-accent hover:bg-accent/10"
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Back View
-          </Button>
+        <div className="flex flex-wrap gap-3">
+          <CameraCapture
+            onPhotoCapture={handlePhotoCapture}
+            photoType="Front"
+            triggerText="Front View"
+          />
+          <CameraCapture
+            onPhotoCapture={handlePhotoCapture}
+            photoType="Side"
+            triggerText="Side View"
+          />
+          <CameraCapture
+            onPhotoCapture={handlePhotoCapture}
+            photoType="Back"
+            triggerText="Back View"
+          />
         </div>
       </div>
 
@@ -140,19 +137,27 @@ const Progress = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                   {datePhotos.map((photo) => (
                     <div key={photo.id} className="group relative">
                       <div className="aspect-[3/4] bg-muted/20 rounded-xl overflow-hidden border-2 border-dashed border-muted hover:border-primary transition-colors">
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="text-center">
-                            <Image className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-sm text-muted-foreground">Progress Photo</p>
-                            <Badge variant="outline" className={`mt-2 ${getTypeColor(photo.type)}`}>
-                              {photo.type} View
-                            </Badge>
+                        {photo.url !== "/placeholder.svg" ? (
+                          <img
+                            src={photo.url}
+                            alt={`${photo.type} progress photo`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-center">
+                              <Image className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground">Progress Photo</p>
+                              <Badge variant="outline" className={`mt-2 ${getTypeColor(photo.type)}`}>
+                                {photo.type} View
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                       <div className="mt-3">
                         <p className="text-sm text-muted-foreground">{photo.notes}</p>

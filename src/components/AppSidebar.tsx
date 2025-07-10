@@ -46,27 +46,31 @@ export function AppSidebar() {
   const isActive = (path: string) => currentPath === path;
   
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 transition-all duration-200 ${
+    `flex items-center gap-3 transition-all duration-200 rounded-md p-2 ${
       isActive 
         ? "bg-primary/20 text-primary border-r-2 border-primary" 
         : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
     }`;
 
   return (
-    <Sidebar className={`${state === "collapsed" ? "w-16" : "w-64"} border-r border-border bg-card/50 backdrop-blur-sm`}>
-      <SidebarContent className="py-4">
+    <Sidebar className={`${state === "collapsed" ? "w-16" : "w-64"} border-r border-border bg-card/50 backdrop-blur-sm min-h-screen`}>
+      <SidebarContent className="py-4 px-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
             Main
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-11">
-                    <NavLink to={item.url} end className={getNavClassName}>
+                  <SidebarMenuButton asChild className="h-11 w-full">
+                    <NavLink 
+                      to={item.url} 
+                      end 
+                      className={({ isActive }) => getNavClassName({ isActive })}
+                    >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {state !== "collapsed" && <span className="font-medium">{item.title}</span>}
+                      {state !== "collapsed" && <span className="font-medium truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -77,17 +81,20 @@ export function AppSidebar() {
 
         {state !== "collapsed" && (
           <SidebarGroup className="mt-8">
-            <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
               Analytics
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1">
                 {analyticsItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild className="h-11">
-                      <NavLink to={item.url} className={getNavClassName}>
+                    <SidebarMenuButton asChild className="h-11 w-full">
+                      <NavLink 
+                        to={item.url} 
+                        className={({ isActive }) => getNavClassName({ isActive })}
+                      >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium">{item.title}</span>
+                        <span className="font-medium truncate">{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -30,20 +30,27 @@ const Dashboard = () => {
     <div className="space-y-8 animate-slide-up">
       {/* Welcome Section */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Welcome Back, Athlete! 💪
           </h1>
-          <p className="text-muted-foreground mt-2 text-lg">
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base lg:text-lg">
             You don't have to feel sore to be growing. Consistency builds strength.
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button className="bg-primary hover:bg-primary/90 text-background font-semibold">
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <Button 
+            className="bg-primary hover:bg-primary/90 text-background font-semibold w-full sm:w-auto"
+            onClick={() => window.location.href = '/workouts'}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Log Workout
           </Button>
-          <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
+          <Button 
+            variant="outline" 
+            className="border-secondary text-secondary hover:bg-secondary/10 w-full sm:w-auto"
+            onClick={() => window.location.href = '/progress'}
+          >
             <Camera className="h-4 w-4 mr-2" />
             Progress Photo
           </Button>
@@ -51,18 +58,18 @@ const Dashboard = () => {
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <Card className="metric-card border-0">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2 sm:pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Weekly Streak</CardTitle>
-              <Flame className="h-5 w-5 text-accent" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Weekly Streak</CardTitle>
+              <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-accent">6</div>
+            <div className="text-2xl sm:text-3xl font-bold text-accent">6</div>
             <p className="text-xs text-muted-foreground mt-1">weeks consistent</p>
-            <div className="mt-3">
+            <div className="mt-2 sm:mt-3">
               <Progress value={85} className="h-2" />
             </div>
           </CardContent>
@@ -118,7 +125,7 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <Card className="glass-effect border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -130,7 +137,7 @@ const Dashboard = () => {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={strengthData}>
                   <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" />

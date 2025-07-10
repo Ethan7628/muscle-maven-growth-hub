@@ -136,7 +136,7 @@ const Workouts = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                   <Label htmlFor="exercise-name">Exercise Name</Label>
                   <Input
@@ -187,7 +187,10 @@ const Workouts = () => {
                   />
                 </div>
               </div>
-              <Button onClick={addExercise} className="w-full bg-secondary hover:bg-secondary/90 text-background">
+              <Button 
+                onClick={addExercise} 
+                className="w-full bg-secondary hover:bg-secondary/90 text-background py-2 sm:py-3"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Exercise
               </Button>
@@ -219,8 +222,8 @@ const Workouts = () => {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-4 pt-4">
-                  <div className="flex-1">
+                <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 pt-4">
+                  <div className="flex-1 w-full">
                     <Label htmlFor="soreness">Soreness Check-in</Label>
                     <Select value={currentWorkout.soreness} onValueChange={(value) => setCurrentWorkout(prev => ({ ...prev, soreness: value }))}>
                       <SelectTrigger>
@@ -233,7 +236,10 @@ const Workouts = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={saveWorkout} className="bg-primary hover:bg-primary/90 text-background mt-6">
+                  <Button 
+                    onClick={saveWorkout} 
+                    className="bg-primary hover:bg-primary/90 text-background w-full sm:w-auto"
+                  >
                     <Zap className="h-4 w-4 mr-2" />
                     Save Workout
                   </Button>
