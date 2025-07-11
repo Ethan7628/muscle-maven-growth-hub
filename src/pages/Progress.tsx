@@ -40,22 +40,20 @@ const Progress = () => {
     }
   ]);
 
-  const handlePhotoCapture = (photoBlob: Blob, photoType: string) => {
-    // Create object URL for the captured photo
-    const photoUrl = URL.createObjectURL(photoBlob);
+  const handlePhotoCapture = (photoUrl: string, photoData?: any) => {
+    const photoType = photoData?.photoType || 'Front';
     
     const newPhoto = {
       id: Date.now(),
       date: new Date().toISOString().split('T')[0],
       type: photoType,
       url: photoUrl,
-      notes: `New ${photoType.toLowerCase()} progress photo - ${new Date().toLocaleDateString()}`
+      notes: photoData?.notes || `New ${photoType.toLowerCase()} progress photo - ${new Date().toLocaleDateString()}`
     };
     
     setPhotos(prev => [newPhoto, ...prev]);
     
-    // In a real app with Supabase, you would upload the blob to storage here
-    console.log("Photo blob ready for upload:", photoBlob);
+    console.log("Photo saved to Firebase:", photoUrl, photoData);
   };
 
   const getTypeColor = (type: string) => {
@@ -91,16 +89,19 @@ const Progress = () => {
             onPhotoCapture={handlePhotoCapture}
             photoType="Front"
             triggerText="Front View"
+            category="progress"
           />
           <CameraCapture
             onPhotoCapture={handlePhotoCapture}
             photoType="Side"
             triggerText="Side View"
+            category="progress"
           />
           <CameraCapture
             onPhotoCapture={handlePhotoCapture}
             photoType="Back"
             triggerText="Back View"
+            category="progress"
           />
         </div>
       </div>

@@ -1,25 +1,40 @@
 import { useState, useRef, useCallback } from "react";
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
+import { storage, db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Camera, Upload, X, Check, RotateCcw, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Camera, Upload, X, Check, RotateCcw, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface CameraCaptureProps {
-  onPhotoCapture: (photoBlob: Blob, photoType: string) => void;
-  photoType?: "Front" | "Side" | "Back";
+  onPhotoCapture: (photoUrl: string, photoData?: any) => void;
+  photoType?: "Front" | "Side" | "Back" | "Meal" | "Progress";
   triggerText?: string;
+  category?: 'progress' | 'meal' | 'general';
 }
 
 export function CameraCapture({ 
   onPhotoCapture, 
   photoType = "Front", 
-  triggerText = "Take Photo" 
+  triggerText = "Take Photo",
+  category = 'general'
 }: CameraCaptureProps) {
+  const { currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [photoMetadata, setPhotoMetadata] = useState({
+    title: '',
+    notes: '',
+    category: category
+  });
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +84,7 @@ export function CameraCapture({
     // Draw the video frame to canvas
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Convert to blob
+    // Convert to blob and create URL for preview
     canvas.toBlob((blob) => {
       if (blob) {
         const photoUrl = URL.createObjectURL(blob);
@@ -80,32 +95,110 @@ export function CameraCapture({
     }, 'image/jpeg', 0.8);
   }, [stopCamera]);
 
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const photoUrl = URL.createObjectURL(file);
-      setCapturedPhoto(photoUrl);
-      
-      // Convert file to blob for consistency
-      onPhotoCapture(file, photoType);
-      toast.success(`${photoType} progress photo uploaded! 📸`);
-    } else {
-      toast.error("Please select a valid image file");
+  const uploadPhotoToFirebase = async (file: File | Blob, fileName: string) => {
+    if (!currentUser) {
+      throw new Error('User not authenticated');
     }
-  }, [onPhotoCapture, photoType]);
 
-  const confirmPhoto = useCallback(() => {
-    if (!capturedPhoto || !canvasRef.current) return;
+    const storageRef = ref(storage, `photos/${currentUser.uid}/${category}/${fileName}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    
+    return downloadURL;
+  };
 
-    canvasRef.current.toBlob((blob) => {
-      if (blob) {
-        onPhotoCapture(blob, photoType);
-        toast.success(`${photoType} progress photo saved! 📸`);
-        setIsOpen(false);
-        setCapturedPhoto(null);
+  const saveToFirestore = async (photoUrl: string) => {
+    if (!currentUser) return;
+
+    const photoData = {
+      url: photoUrl,
+      title: photoMetadata.title || `${photoType} ${category} photo`,
+      notes: photoMetadata.notes,
+      category: category,
+      photoType: photoType,
+      userId: currentUser.uid,
+      createdAt: new Date(),
+      metadata: {
+        type: category,
+        photoType: photoType,
+        timestamp: Date.now()
       }
-    }, 'image/jpeg', 0.8);
-  }, [capturedPhoto, onPhotoCapture, photoType]);
+    };
+
+    const docRef = await addDoc(collection(db, 'photos'), photoData);
+    return { id: docRef.id, ...photoData };
+  };
+
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentUser) {
+      if (!currentUser) {
+        toast.error("Please log in to upload photos");
+      }
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const fileName = `${category}_${photoType}_${Date.now()}_${file.name}`;
+      const downloadURL = await uploadPhotoToFirebase(file, fileName);
+      
+      const savedData = await saveToFirestore(downloadURL);
+      
+      onPhotoCapture(downloadURL, savedData);
+      toast.success(`${photoType} photo uploaded successfully! 📸`);
+      setIsOpen(false);
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload photo. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  }, [onPhotoCapture, photoType, category, currentUser]);
+
+  const confirmPhoto = useCallback(async () => {
+    if (!capturedPhoto || !canvasRef.current || !currentUser) {
+      if (!currentUser) {
+        toast.error("Please log in to save photos");
+      }
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        canvasRef.current!.toBlob((blob) => {
+          resolve(blob!);
+        }, 'image/jpeg', 0.8);
+      });
+
+      const fileName = `${category}_${photoType}_${Date.now()}.jpg`;
+      const downloadURL = await uploadPhotoToFirebase(blob, fileName);
+      
+      const savedData = await saveToFirestore(downloadURL);
+      
+      onPhotoCapture(downloadURL, savedData);
+      toast.success(`${photoType} photo saved successfully! 📸`);
+      setIsOpen(false);
+      setCapturedPhoto(null);
+      setPhotoMetadata({ title: '', notes: '', category: category });
+      
+    } catch (error) {
+      console.error('Error saving photo:', error);
+      toast.error('Failed to save photo. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  }, [capturedPhoto, onPhotoCapture, photoType, category, currentUser, photoMetadata]);
 
   const retakePhoto = useCallback(() => {
     setCapturedPhoto(null);
@@ -115,8 +208,9 @@ export function CameraCapture({
   const handleClose = useCallback(() => {
     stopCamera();
     setCapturedPhoto(null);
+    setPhotoMetadata({ title: '', notes: '', category: category });
     setIsOpen(false);
-  }, [stopCamera]);
+  }, [stopCamera, category]);
 
   return (
     <>
@@ -136,7 +230,7 @@ export function CameraCapture({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5 text-primary" />
-              Capture {photoType} Progress Photo
+              Capture {photoType} {category === 'meal' ? 'Meal' : 'Progress'} Photo
             </DialogTitle>
           </DialogHeader>
           
@@ -184,7 +278,7 @@ export function CameraCapture({
                   {stream && (
                     <Button
                       onClick={capturePhoto}
-                      disabled={isCapturing}
+                      disabled={isCapturing || isUploading}
                       className="flex-1 bg-primary hover:bg-primary/90 text-background py-3"
                     >
                       <Camera className="h-4 w-4 mr-2" />
@@ -196,15 +290,26 @@ export function CameraCapture({
                     <Button
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
                       className="flex-1 sm:flex-none"
                     >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </>
+                      )}
                     </Button>
                     
                     <Button
                       variant="outline"
                       onClick={handleClose}
+                      disabled={isUploading}
                       className="flex-1 sm:flex-none"
                     >
                       <X className="h-4 w-4 mr-2" />
@@ -224,27 +329,64 @@ export function CameraCapture({
                     <div className="aspect-[4/3] bg-muted/20 rounded-lg overflow-hidden">
                       <img
                         src={capturedPhoto}
-                        alt={`${photoType} progress photo`}
+                        alt={`${photoType} ${category} photo`}
                         className="w-full h-full object-cover"
                       />
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Photo Metadata */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="photo-title">Photo Title</Label>
+                      <Input
+                        id="photo-title"
+                        placeholder={`${photoType} ${category === 'progress' ? 'Progress Update' : category === 'meal' ? 'Meal Description' : 'Photo'}`}
+                        value={photoMetadata.title}
+                        onChange={(e) => setPhotoMetadata(prev => ({ ...prev, title: e.target.value }))}
+                        disabled={isUploading}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="photo-notes">Notes (optional)</Label>
+                      <Input
+                        id="photo-notes"
+                        placeholder="Add any notes..."
+                        value={photoMetadata.notes}
+                        onChange={(e) => setPhotoMetadata(prev => ({ ...prev, notes: e.target.value }))}
+                        disabled={isUploading}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Photo Confirmation Controls */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     onClick={confirmPhoto}
+                    disabled={isUploading}
                     className="flex-1 bg-secondary hover:bg-secondary/90 text-background py-3"
                   >
-                    <Check className="h-4 w-4 mr-2" />
-                    Save Photo
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving to Cloud...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Save to Cloud
+                      </>
+                    )}
                   </Button>
                   
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
                       onClick={retakePhoto}
+                      disabled={isUploading}
                       className="flex-1 sm:flex-none"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -254,6 +396,7 @@ export function CameraCapture({
                     <Button
                       variant="outline"
                       onClick={handleClose}
+                      disabled={isUploading}
                       className="flex-1 sm:flex-none"
                     >
                       <X className="h-4 w-4 mr-2" />

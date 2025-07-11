@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Apple, Camera, Plus, TrendingUp, Target, Utensils } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from "recharts";
+import { CameraCapture } from "@/components/CameraCapture";
 import { toast } from "sonner";
 
 const Nutrition = () => {
@@ -144,10 +145,15 @@ const Nutrition = () => {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button className="bg-primary hover:bg-primary/90 text-background">
-            <Camera className="h-4 w-4 mr-2" />
-            Photo Meal
-          </Button>
+          <CameraCapture
+            onPhotoCapture={(photoUrl, photoData) => {
+              console.log('Meal photo captured:', photoUrl, photoData);
+              toast.success('Meal photo uploaded! 📸🍽️');
+            }}
+            photoType="Meal"
+            triggerText="Photo Meal"
+            category="meal"
+          />
           <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
             <Plus className="h-4 w-4 mr-2" />
             Manual Entry
@@ -367,10 +373,15 @@ const Nutrition = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Add Meal
                 </Button>
-                <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Photo + AI Analysis
-                </Button>
+                <CameraCapture
+                  onPhotoCapture={(photoUrl, photoData) => {
+                    console.log('Meal analysis photo:', photoUrl, photoData);
+                    toast.success('Photo uploaded! AI analysis coming soon! 🤖');
+                  }}
+                  photoType="Meal"
+                  triggerText="Photo + AI Analysis"
+                  category="meal"
+                />
               </div>
             </CardContent>
           </Card>
