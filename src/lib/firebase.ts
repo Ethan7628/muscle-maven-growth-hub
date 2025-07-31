@@ -4,13 +4,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  // Replace with your Firebase config
-  apiKey: "your-api-key",
-  authDomain: "your-auth-domain",
-  projectId: "your-project-id",
-  storageBucket: "your-storage-bucket",
-  messagingSenderId: "your-messaging-sender-id",
-  appId: "your-app-id"
+  apiKey: "AIzaSyCZONUrbNOPbn5CQFj4SFP93sRofnEXZ_Y",
+  authDomain: "flex-tracker-ae34b.firebaseapp.com",
+  projectId: "flex-tracker-ae34b",
+  storageBucket: "flex-tracker-ae34b.firebasestorage.app",
+  messagingSenderId: "278793813144",
+  appId: "1:278793813144:web:9c2c6ca95a7e03c00224ed",
+  measurementId: "G-S3RXNJVXMR"
 };
 
 // Initialize Firebase
